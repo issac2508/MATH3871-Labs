@@ -1,4 +1,68 @@
 ###############
+# Q1 a)
+
+n = 65
+sumx = 24890
+alpha = 1
+beta = 0.01
+
+pmean = (alpha+sumx)/(beta+n)
+
+L = qgamma(0.025, shape = alpha+sumx, rate = beta+n)
+U = qgamma(0.975, shape = alpha+sumx, rate = beta+n)
+
+cat("Posterior mean: ",pmean," (",L,",",U,")")
+
+###############
+# Q1 b)
+
+N = 500
+L = rep(NA, length=250)
+U = rep(NA, length=250)
+
+for (i in 1:250) {
+  data = sort(rgamma(N, shape = alpha+sumx, rate = beta+n))
+  L[i] = data[0.025*N]
+  U[i] = data[0.975*N]
+}
+
+widthL=max(L)-min(L)
+widthU=max(U)-min(U)
+par(mfrow=c(1,2))
+hist(L,probability=T,xlab="Lower 95% CI bound")
+points(qgamma(0.025, shape = alpha+sumx, rate = beta+n),0,pch=16,col=2)
+hist(U,probability=T,xlab="Upper 95% CI bound")
+points(qgamma(0.975, shape = alpha+sumx, rate = beta+n),0,pch=16,col=2)
+cat("L interval variability (range):",widthL,"\n")
+cat("U interval variability (range):",widthU,"\n")
+
+###############
+# Q1 c)
+
+n = 65
+sumx = 24890
+alpha = 1
+beta = 0.01
+
+theta = rgamma(1000, shape = alpha+sumx, rate = beta+n)
+y = rpois(1000, theta)
+
+hist(y, probability=T, ylab="Density", main="Posterior Predictive Distribution")
+
+xvals = 300:450
+
+predDist=dnbinom(xvals, alpha+sumx, 1-1/(beta + n + 1))
+
+for (i in 1:length(xvals)) {
+  lines(xvals, predDist, col="purple", lwd=2)
+}
+
+###############
+# Q1 d) in onenote
+
+
+
+###############
 # Q3 a)
 # set d = 1 and ell = 1 for example
 
@@ -26,7 +90,7 @@ buffon=function(n, d=1, ell=1, make.plot=TRUE) {
 buffon(2000)
 
 ###############
-# Q3 b) in one note
+# Q3 b) in onenote
 
 # Q3 c)
 
