@@ -112,7 +112,13 @@ new_observations <- rpois(num_obs, theta_est)
 hist(new_observations, prob=TRUE)
 xaxis <- 300:450
 pred_dist <- dnbinom(xaxis, alpha+sum, 1 - 1/(beta+n+1))
+# ^ since beta in the Gamma distribution is given as the rate parameter, the
+#   corresponding probability parameter in the Negative Binomial needs to be
+#   1 - (...) to make it a probability
+#
+# if we just give it as a scale parameter in Gamma, all is well
 lines(xaxis, pred_dist, col = "red", lwd=3)
+
 
 
 ######## Question 2: Tuberculosis
