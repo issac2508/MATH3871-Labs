@@ -12,12 +12,12 @@ fx_1 <- function(x) {
     return (x + 0.5)
 }
 
-obs_1 <- inverse_CDF(runif(5000))
+obs_1 <- inverse_CDF_1(runif(5000))
 hist(obs_1, prob=TRUE)
 
 xx_1 <- seq(0,1,length=100)
 print(xx_1)
-lines(xx_1, fx(xx_1), col="red")
+lines(xx_1, fx_1(xx_1), col="red")
 
 # Question 2
 
