@@ -43,7 +43,7 @@ mean(1/u1^2*1/u2^2*exp(2-1/u1-1/u2)*(u1<u2))
 ###########
 # 3)
 
-L=50
+L=20
 nvec=seq(100, 20000, length=L)
 mvec=vvec=rep(NA, L)
 for (i in 1:L) {
