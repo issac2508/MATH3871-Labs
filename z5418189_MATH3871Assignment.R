@@ -33,6 +33,8 @@ anyNA(wine)
 
 
 wine$good = as.integer(wine$quality >= 6.5)
+wine = subset(wine, select = -quality)
+
 
 #-------------------------------------------------------------------------------
 #QUESTION 3. 
@@ -48,7 +50,11 @@ mleest = as.numeric(coef(model))
 #QUESTION 2.
 
 lpost.LR <- function(beta,X,y) {
- 
+  k = ncol(X)
+  alpha = numeric(k)
+  omega = 100 * diag(k)
+  
+  dnorm()
   
 }			
 
