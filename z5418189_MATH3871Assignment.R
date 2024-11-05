@@ -54,8 +54,14 @@ lpost.LR <- function(beta,X,y) {
   alpha = numeric(k)
   omega = 100 * diag(k)
   
-  dnorm()
+  loglikelihood = y%*%X%*%beta-log(1+exp(x%*%beta))
+  # find logprior
+  logprior = -0.5 * t(beta - alpha) %*% solve(omega) %*% (beta - alpha) -
+    (k / 2) * log(2 * pi) - 0.5 * log(det(omega))
   
+  logpost = loglikelihood + logprior
+  
+  return(logpost)
 }			
 
 #-------------------------------------------------------------------------------
