@@ -68,17 +68,37 @@ lpost.LR <- function(beta,X,y) {
 #QUESTION 3. 
 
 mhmcmc <- function(y, X, B, nsims, Sigma) {
-
-  #You must use mvrnorm for random sampling from a multivariate normal. 
+  
+  k = ncol(X)
+  beta_mat = matrix(0, nrow = nsims, ncol = k)
+  accprob = numeric(nsims)
+  beta_star = matrix(0, nrow = nsims, ncol = k)
+  acc = 0
+  
+  beta = numeric(k)
+  
+  for (t in 1:nsims) {
+    prop_beta = mvrnorm(1, mu = beta, Sigma = Sigma)
+    
+    log_post_current = lpost.LR(beta, X, y)
+    log_post_proposed = lpost.LR(prop_beta, X, y)
+    
+    accprob[t] = exp(log_post_proposed - log_post_current)
+    acceptance_threshold = min(1, accprob[t])
+    
+    if (runif(1) < acceptance_threshold) {
+      beta = prop_beta  # Accept the proposed value
+      acc = acc + 1     # Increment accepted count
+    }
+    
+    beta_mat[t, ] <- beta
+    beta_star[t, ] <- prop_beta
+  }
   
   
-}
-
-
- 
-#return variables 
-mhout = list("beta_mat"=beta_mat, "accprob"=accprob, "beta_star" = beta_star, "acc"=acc)
-return(mhout)
+  #return variables 
+  mhout = list("beta_mat"=beta_mat, "accprob"=accprob, "beta_star" = beta_star, "acc"=acc)
+  return(mhout)
 
 }
 
