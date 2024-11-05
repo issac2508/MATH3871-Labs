@@ -62,7 +62,7 @@ lpost.LR <- function(beta,X,y) {
   logpost = loglikelihood + logprior
   
   return(logpost)
-}			
+}
 
 #-------------------------------------------------------------------------------
 #QUESTION 3. 
@@ -78,7 +78,7 @@ mhmcmc <- function(y, X, B, nsims, Sigma) {
   beta = numeric(k)
   
   for (t in 1:nsims) {
-    prop_beta = mvrnorm(1, mu = beta, Sigma = Sigma)
+    prop_beta = mvrnorm(1, mu=beta, Sigma=Sigma)
     
     log_post_current = lpost.LR(beta, X, y)
     log_post_proposed = lpost.LR(prop_beta, X, y)
@@ -110,13 +110,16 @@ mhmcmc <- function(y, X, B, nsims, Sigma) {
 #Covariance for proposal: 
 Sigma = diag(c(1100, 0.0015, 0.04, 0.05, 0.0005, 0.4, 0.00001, 0.000001, 0.0001, 0.09, 0.03, 0.002)) #Do not modify  
 
-mhout1 = mhmcmc(  )
+mhout1 = mhmcmc(y=wine$good, X=wine, B=mleest, nsims=10^5, Sigma=Sigma)
 
 #(a) produce trace plots:
 
+par(mfrow=c(2,2))
+
+
 
 #(b) proportion of accepted moves:
-mh4acc = 
+mh4acc = mhout1.accprob
 
 
 #-------------------------------------------------------------------------------
