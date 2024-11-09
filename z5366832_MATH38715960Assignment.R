@@ -1,5 +1,6 @@
 #Template Script for Assignment, MATH3871/5960
 
+#install.packages("mvtnorm")
 library(mvtnorm)
 library(MASS)
 set.seed(1234)
@@ -90,7 +91,7 @@ mhmcmc <- function(y, X, B, nsims, Sigma) {
         B_prop = mvrnorm(n=1, mu=B, Sigma=Sigma)
 
         # compute acceptance threshold
-        if (exp(lpost.LR(B, X, y)) == 0) {
+        if (lpost.LR(B, X, y) == -Inf) {
             log.alpha = 0
         } else {
             log.alpha = min(0, lpost.LR(B_prop, X, y) - lpost.LR(B, X, y))
