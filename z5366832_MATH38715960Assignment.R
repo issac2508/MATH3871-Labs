@@ -55,20 +55,19 @@ lpost.LR <- function(beta,X,y) {
 
     alpha = rep(0, k)
     omega = 100 * diag(k)
-    prior = dmvnorm(x=beta, mean=alpha, sigma=omega)
+    log.prior = log(dmvnorm(x=beta, mean=alpha, sigma=omega))
 
     log.likelihood = t(y) %*% X %*% beta - sum(log(1 + exp(X %*% beta)))
 
-    return (log(prior) + log.likelihood)
+    return (log.prior + log.likelihood)
 }
 
 #### Just making sure it works
-y = as.matrix(wine$good)
-X = wine[,!names(wine) %in% c("quality", "good")]
-X = as.matrix(cbind("intercept"=rep(1, nrow(X)), X))
-beta = mleest
-
-lpost.LR(beta, X, y)
+# y = as.matrix(wine$good)
+# X = wine[,!names(wine) %in% c("quality", "good")]
+# X = as.matrix(cbind("intercept"=rep(1, nrow(X)), X))
+# beta = mleest
+# lpost.LR(beta, X, y)
 
 
 #-------------------------------------------------------------------------------
@@ -91,14 +90,11 @@ mhmcmc <- function(y, X, B, nsims, Sigma) {
         B_prop = mvrnorm(n=1, mu=B, Sigma=Sigma)
 
         # compute acceptance threshold
-        # if (lpost.LR(B, X, y) > 0) {
-        #     alpha = min(1, lpost.LR(B_prop, X, y)/lpost.LR(B, X, y))
-        # } else {
-        #     alpha = 1
-        # }
-        # log.alpha = log(alpha)
-
-        log.alpha = lpost.LR(B_prop, X, y) - lpost.LR(B, X, y)
+        if (exp(lpost.LR(B, X, y)) == 0) {
+            log.alpha = 0
+        } else {
+            log.alpha = min(0, lpost.LR(B_prop, X, y) - lpost.LR(B, X, y))
+        }
         log.u = log(runif(1))
 
         # if accept, update B and append to lists
@@ -130,21 +126,11 @@ X = wine[,!names(wine) %in% c("quality", "good")]
 X = as.matrix(cbind("intercept"=rep(1, nrow(X)), X))
 B = mleest
 
-nSims = 10^5 # change to 10^5
+nSims = 10^5
 
 mhout1 = mhmcmc(y, X, B, nSims, Sigma)
 
 #(a) produce trace plots:
-mhout1
-
-# Just doing for a single i to see how to access all the values
-# i = 1
-# param_values = lapply(mhout1$beta_mat, function(l) l[[i]])
-# param_values = unlist(param_values)
-#
-# par(mfrow=c(1,1))
-# plot(param_values, type="l")
-# param_values
 
 par(mfrow=c(6,2))
 for (i in 1:ncol(X)) {
@@ -155,6 +141,15 @@ for (i in 1:ncol(X)) {
     plot(param_values, type="l", main=names(mhout1$beta_mat[[1]])[i], xlab="iteration")
 }
 
+# Just doing for a single i to see how to access all the values
+# i = 1
+# param_values = lapply(mhout1$beta_mat, function(l) l[[i]])
+# param_values = unlist(param_values)
+#
+# par(mfrow=c(1,1))
+# plot(param_values, type="l")
+# param_values
+
 #(b) proportion of accepted moves:
 mh4acc = mhout1$acc / nSims
 mh4acc
@@ -162,19 +157,114 @@ mh4acc
 #-------------------------------------------------------------------------------
 #QUESTION 5.
 
+prior.mean = rep(0, ncol(X))
+too.high = rep(100, ncol(X))
+too.low = rep(-100, ncol(X))
+
+nSims = 10^5
+
+mhout1 = mhmcmc(y, X, mleest, nSims, Sigma)
+mhout2 = mhmcmc(y, X, prior.mean, nSims, Sigma)
+mhout3 = mhmcmc(y, X, too.high, nSims, Sigma)
+mhout4 = mhmcmc(y, X, too.low, nSims, Sigma)
+
+par(mfrow=c(6,2), mar = c(2,2,2,2))
+for (i in 1:ncol(X)) {
+    # for each ith coefficient...
+
+    param_values_1 = lapply(mhout1$beta_mat, function(l) l[[i]]) # get list of accepted values for the current coefficient
+    param_values_1 = unlist(param_values_1)
+
+    param_values_2 = lapply(mhout2$beta_mat, function(l) l[[i]])
+    param_values_2 = unlist(param_values_2)
+
+    param_values_3 = lapply(mhout3$beta_mat, function(l) l[[i]])
+    param_values_3 = unlist(param_values_3)
+
+    param_values_4 = lapply(mhout4$beta_mat, function(l) l[[i]])
+    param_values_4 = unlist(param_values_4)
+
+    ylim = range(param_values_1, param_values_2, param_values_3, param_values_4)
+
+    plot(param_values_1, type="l", main=names(mhout1$beta_mat[[1]])[i], ylim=ylim)
+    lines(param_values_2, col="blue")
+    lines(param_values_3, col="green")
+    lines(param_values_4, col="purple")
+
+}
+
+# individual
+# i=2
+# param1 = unlist(lapply(mhout1$beta_mat, function(l) l[[i]]))
+# param2 = unlist(lapply(mhout2$beta_mat, function(l) l[[i]]))
+# param3 = unlist(lapply(mhout3$beta_mat, function(l) l[[i]]))
+# param4 = unlist(lapply(mhout4$beta_mat, function(l) l[[i]]))
+# ylim = range(param1, param2, param3, param4)
+#
+# plot(param1, type="l", main=names(mhout1$beta_mat[[1]])[i], ylim=ylim)
+# lines(param2, col="blue")
+# lines(param3, col="green")
+# lines(param4, col="purple")
 
 
 #-------------------------------------------------------------------------------
 #QUESTION 6.
 
+prop = 0.055 # set covariance proportional to MLE covariance
+newSigma = vcov(res) * prop
+nSims = 10^5
 
+mhout6 = mhmcmc(y, X, B, nSims, newSigma)
 
-#calculate the acceptance rate
-mh6acc =
+mh6acc = mhout6$acc / nSims
+mh6acc
 
 #(a)produce trace plots:
 
+par(mfrow=c(6,2), mar=c(2,2,2,2))
+for (i in 1:ncol(X)) {
+    # for each ith coefficient...
+    param_values = lapply(mhout6$beta_mat, function(l) l[[i]])
+    param_values = unlist(param_values)
+
+    plot(param_values, type="l", main=names(mhout6$beta_mat[[1]])[i], xlab="iteration")
+}
 
 #(b) produce marginal histgrams and overlay MLE:
 
+# Burn in (look at trace plots)
+# Remove first 10K samples - all variables look definitely converged by then
+converged.samples = tail(mhout6$beta_mat, -10000)
+
+# Check autocorrelation - do we need to do thinning?
+par(mfrow=c(6,2))
+for (i in 1:ncol(X)) {
+    param_values = lapply(converged.samples, function(l) l[[i]])
+    param_values = unlist(param_values)
+    acf(param_values, lag.max=100)
+    # acf(param_values, lag.max=500) # clearly the lag is about 500 samples...
+                                     # if we 10^5 / 500 we would get 200 supposedly
+                                     # independent samples
+}
+# Try thinning by taking every 500th sample
+# thinned.samples = converged.samples[1:180 * 500]
+# Try only taking every 100th sample
+# thinned.samples = converged.samples[1:900 * 100]
+
+# Plot histograms
+samples = converged.samples # or thinned.samples
+
+par(mfrow=c(6,2), mar=c(2,2,2,2))
+for (i in 1:ncol(X)) {
+    param_values = lapply(samples, function(l) l[[i]])
+    param_values = unlist(param_values)
+
+    hist(
+        param_values,
+        ylim=c(0,30000),
+        xlim=range(mleest[i], param_values),
+        main=names(mhout6$beta_mat[[1]])[i]
+    )
+    abline(v=mleest[i], col="blue", lwd=2, lty=2)
+}
 
