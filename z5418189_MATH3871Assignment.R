@@ -24,20 +24,16 @@ wine = read.csv("winequality-red.csv")
 anyNA(wine)
 # returned false so there are no NA values
 
-
 #-------------------------------------------------------------------------------
 #QUESTION 2.
 
-
 wine$good = as.integer(wine$quality >= 6.5)
 wine = subset(wine, select = -quality)
-
 
 #-------------------------------------------------------------------------------
 #QUESTION 3. 
 
 model = glm(good ~ ., data=wine, family=binomial)
-  
 mleest = as.numeric(coef(model))
 
 #-------------------------------------------------------------------------------
@@ -81,9 +77,6 @@ mhmcmc <- function(y, X, B, nsims, Sigma) {
 
     log_post_current = lpost.LR(beta, X, y)
     log_post_proposed = lpost.LR(prop_beta, X, y)
-    
-    print(log_post_proposed)
-    print(log_post_current)
 
     accprob[i] = exp(log_post_proposed - log_post_current)
     acceptance_threshold = min(1, accprob[i])
@@ -124,27 +117,62 @@ for (i in 1:num_coefficients) {
        xlab = "Iteration", ylab = "Coefficient Value")
 }
 
-
 #(b) proportion of accepted moves:
 mh4acc = mhout1$acc/10^5
 
+#-------------------------------------------------------------------------------
+#QUESTION 5.
+
+init1 = mleest + rnorm(length(mleest), 0, 1)
+init2 = mleest - rnorm(length(mleest), 0, 1)
+init3 = rnorm(length(mleest), 0, 10) 
+init4 = matrix(0, nrow=12, ncol=1)
+
+chain1 = mhmcmc(y=y, X=X, B=init1, nsims=10^5, Sigma=Sigma)
+chain2 = mhmcmc(y=y, X=X, B=init2, nsims=10^5, Sigma=Sigma)
+chain3 = mhmcmc(y=y, X=X, B=init3, nsims=10^5, Sigma=Sigma)
+chain4 = mhmcmc(y=y, X=X, B=init4, nsims=10^5, Sigma=Sigma)
+
+par(mfrow = c(4, 3), oma = c(0, 0, 0, 6))
+
+for (i in 1:num_coefficients) {
+  plot(chain1$beta_mat[, i], type = "l", col = "blue", lty = 1,
+       main = paste("Trace Plot for", names[i]),
+       xlab = "Iteration", ylab = "Coefficient Value",
+       ylim = range(c(chain1$beta_mat[, i], chain2$beta_mat[, i],
+                      chain3$beta_mat[, i], chain4$beta_mat[, i])))
+  
+  lines(chain2$beta_mat[, i], col = "red", lty = 1)
+  lines(chain3$beta_mat[, i], col = "green", lty = 1)
+  lines(chain4$beta_mat[, i], col = "purple", lty = 1)
+  
+}
+
+par(xpd = NA)
+legend("topright", inset = c(-0.45, -20), legend = c("Chain 1", "Chain 2", "Chain 3", "Chain 4"),
+       col = c("blue", "red", "green", "purple"), lty = c(1, 1, 1, 1), cex = 0.8)
+
 
 #-------------------------------------------------------------------------------
-#QUESTION 5. 
+#QUESTION 6.
 
+cov_matrix = as.matrix(vcov(model))
 
+cov_mat = 0.05 * cov_matrix
 
-#-------------------------------------------------------------------------------
-#QUESTION 6. 
-
+mhout2 = mhmcmc(y=y, X=X, B=mleest, nsims=10^5, Sigma=cov_mat)
 
 
 #calculate the acceptance rate
-mh6acc = 
+mh6acc = mhout2$acc/10^5
 
 #(a)produce trace plots:
+par(mfrow=c(4,3))
+for (i in 1:num_coefficients) {
+  plot(mhout2$beta_mat[, i], type = "l", main = paste("Trace Plot for", names[i]),
+       xlab = "Iteration", ylab = "Coefficient Value")
+}
 
-
-#(b) produce marginal histgrams and overlay MLE: 
+#(b) produce marginal histograms and overlay MLE: 
 
 
