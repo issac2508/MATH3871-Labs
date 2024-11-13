@@ -4,7 +4,6 @@
 library(MASS) #you may need to install the package first! 
 set.seed(1234)
 
-
 #-------------------------------------------------------------------------------
 #INSTRUCTIONS 
 #1. Do not delete or edit existing text in this template, only add to it. 
@@ -69,17 +68,21 @@ mhmcmc <- function(y, X, B, nsims, Sigma) {
   beta_star = matrix(0, nrow = nsims, ncol = k)
   acc = 0
   
-  beta = matrix(0, nrow=k, ncol=1)
-  
+  beta = B
   
   for (i in 1:nsims) {
     prop_beta = mvrnorm(1, mu=beta, Sigma=Sigma)
-
+    
     log_post_current = lpost.LR(beta, X, y)
     log_post_proposed = lpost.LR(prop_beta, X, y)
 
     accprob[i] = exp(log_post_proposed - log_post_current)
-    acceptance_threshold = min(1, accprob[i])
+    if (is.na(accprob[i])) {
+      acceptance_threshold = 1
+    } else {
+      acceptance_threshold = min(1, accprob[i])
+      
+    }
     
     if (runif(1) <= acceptance_threshold) {
       beta = prop_beta  # Accept the proposed value
@@ -123,9 +126,9 @@ mh4acc = mhout1$acc/10^5
 #-------------------------------------------------------------------------------
 #QUESTION 5.
 
-init1 = mleest + rnorm(length(mleest), 0, 1)
-init2 = mleest - rnorm(length(mleest), 0, 1)
-init3 = rnorm(length(mleest), 0, 10) 
+init1 = mleest + rnorm(length(mleest), 0, 10)
+init2 = matrix(50, nrow=12, ncol=1)
+init3 = matrix(-50, nrow=12, ncol=1)
 init4 = matrix(0, nrow=12, ncol=1)
 
 chain1 = mhmcmc(y=y, X=X, B=init1, nsims=10^5, Sigma=Sigma)
@@ -134,7 +137,6 @@ chain3 = mhmcmc(y=y, X=X, B=init3, nsims=10^5, Sigma=Sigma)
 chain4 = mhmcmc(y=y, X=X, B=init4, nsims=10^5, Sigma=Sigma)
 
 par(mfrow = c(4, 3), oma = c(0, 0, 0, 6))
-
 for (i in 1:num_coefficients) {
   plot(chain1$beta_mat[, i], type = "l", col = "blue", lty = 1,
        main = paste("Trace Plot for", names[i]),
@@ -147,9 +149,8 @@ for (i in 1:num_coefficients) {
   lines(chain4$beta_mat[, i], col = "purple", lty = 1)
   
 }
-
 par(xpd = NA)
-legend("topright", inset = c(-0.45, -20), legend = c("Chain 1", "Chain 2", "Chain 3", "Chain 4"),
+legend("topright", inset = c(-0.85, -20), legend = c("Chain 1", "Chain 2", "Chain 3", "Chain 4"),
        col = c("blue", "red", "green", "purple"), lty = c(1, 1, 1, 1), cex = 0.8)
 
 
@@ -157,22 +158,36 @@ legend("topright", inset = c(-0.45, -20), legend = c("Chain 1", "Chain 2", "Chai
 #QUESTION 6.
 
 cov_matrix = as.matrix(vcov(model))
-
 cov_mat = 0.05 * cov_matrix
 
 mhout2 = mhmcmc(y=y, X=X, B=mleest, nsims=10^5, Sigma=cov_mat)
-
 
 #calculate the acceptance rate
 mh6acc = mhout2$acc/10^5
 
 #(a)produce trace plots:
-par(mfrow=c(4,3))
+par(mfrow=c(4,3), oma = c(0, 0, 0, 0))
 for (i in 1:num_coefficients) {
   plot(mhout2$beta_mat[, i], type = "l", main = paste("Trace Plot for", names[i]),
        xlab = "Iteration", ylab = "Coefficient Value")
 }
 
 #(b) produce marginal histograms and overlay MLE: 
+par(mfrow=c(4,3))
+for (i in 1:num_coefficients) {
+  acf(mhout2$beta_mat[, i], main = paste("ACF for", names[i]))
+}
 
+post_burnin = mhout2$beta_mat[-(1:100), ]
+
+par(mfrow=c(4,3))
+for (i in 1:num_coefficients) {
+  x_limits = range(post_burnin[, i], mleest[i])
+  
+  hist_data = hist(post_burnin[, i], breaks = 50, main = paste("Histogram for", names[i]),
+       xlab = "Coefficient Value", col = "lightblue", probability = TRUE, xlim = x_limits)
+  
+  segments(x0 = mleest[i], y0 = 0, x1 = mleest[i], y1 = max(hist_data$density), 
+           col = "red", lwd = 1, lty = 1)
+}
 
